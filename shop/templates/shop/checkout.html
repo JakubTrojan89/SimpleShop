@@ -1,0 +1,30 @@
+{% extends 'shop/base.html' %}
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+    <h1>The Checkout Page</h1>
+
+    <p>Please fill in your address and choose a payment method:</p>
+
+    <form action="{% url 'shop:order_success' %}" method="post">
+        {% csrf_token %}
+        <!-- Address input fields -->
+        <label for="address">Address:</label>
+        <input type="text" id="address" name="address" value="{{ user_address.address }}" required><br><br>
+
+        <!-- Payment method selection -->
+        <label for="payment-method">Payment Method:</label>
+        <select id="payment-method" name="payment-method">
+            <option value="credit-card">Credit Card</option>
+            <option value="paypal">PayPal</option>
+            <option value="bank-transfer">Bank Transfer</option>
+        </select><br><br>
+
+        <form action="{% url 'shop:order-success' order_id %}" method="get">
+            <button type="submit"
+                    class="inline-block mt-6 px-6 py-3 text-lg font-semibold bg-teal-500 text-white rounded-xl">Proceed
+                to Payment
+            </button>
+        </form>
+    </form>
+{% endblock %}

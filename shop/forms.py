@@ -51,3 +51,4 @@ class EditProductForm(forms.ModelForm):
                 'class': INPUT_CLASSES
             })
         }
+

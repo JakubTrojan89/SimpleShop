@@ -1,10 +1,15 @@
+from audioop import reverse
+
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 
 from django.db.models import Q
+from django.views import View
+from django.views.generic import TemplateView
 
 from .forms import AddProductForm, EditProductForm
-from shop.models import Product, Category
+from shop.models import Product, Category, OrderProduct, Order, Address
 
 
 def search(request):
@@ -97,3 +102,160 @@ def delete(request, pk):
     product.delete()
 
     return redirect('dashboard:dashboard')
+
+
+class CartView(TemplateView):
+    template_name = 'shop/cart.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cart = self.request.session.get('cart', {})
+        cart_products = []
+        total_price = 0
+
+        for product_id, quantity in cart.items():
+            product = get_object_or_404(Product, id=product_id)
+            total_product_price = product.price * quantity
+            total_price += total_product_price
+            cart_products.append({
+                'product': product,
+                'quantity': quantity,
+                'total_product_price': total_product_price,
+            })
+
+        context['cart_cart_products'] = cart_products
+        context['total_price'] = total_price
+        return context
+
+
+class AddToCartView(View):
+    def post(self, request, *args, **kwargs):
+        product_id = request.POST.get('product_id')
+        product = get_object_or_404(Product, id=product_id)
+
+        try:
+            quantity = int(request.POST.get('quantity', 1))
+            if quantity <= 0:
+                messages.error(request, "Quantity must be greater than zero.")
+                return redirect('shop:cart')
+        except ValueError:
+            messages.error(request, "Invalid quantity. Please provide a valid number.")
+            return redirect('shop:cart')
+
+        cart = request.session.get('cart', {})
+        cart[product_id] = cart.get(product_id, 0) + quantity
+        request.session['cart'] = cart
+
+        messages.success(request, f"{quantity} {product.name}{'s' if quantity > 1 else ''} added to cart.")
+        return redirect('shop:cart')
+
+
+class UpdateCartView(View):
+    def post(self, request, product_id):
+        submitted_quantity = request.POST.get('quantity', '').strip()
+        cart = request.session.get('cart', {})
+
+        current_quantity = cart.get(str(product_id), 1)
+
+        if submitted_quantity.isdigit() and int(submitted_quantity) > 0:
+            current_quantity = int(submitted_quantity)
+            product = get_object_or_404(Product, id=product_id)
+
+        request.session['cart'] = cart
+        request.session.modified = True
+
+        return redirect(reverse('cart'))
+
+
+class RemoveFromCartView(View):
+    def get(self, request, product_id):
+        cart = request.session.get('cart', {})
+
+        if str(product_id) in cart:
+            del cart[str(product_id)]
+
+        request.session['cart'] = cart
+        return redirect(reverse('cart'))
+
+
+class CheckoutView(View):
+    def get(self, request):
+        # Calculate total price from session cart
+        cart = request.session.get('cart', {})
+        total_price = 0
+        for product_id, quantity in cart.items():
+            product = Product.objects.get(id=product_id)
+            total_price += product.price * quantity
+
+        # Pass total price to template
+        context = {
+            'total_price': total_price,
+        }
+        return render(request, 'shop/checkout.html', context)
+
+    def post(self, request):
+        # Extract form data
+        name = request.POST.get('name')
+        surname = request.POST.get('surname')
+        email = request.POST.get('email')
+        phone_number = request.POST.get('number')
+        street = request.POST.get('street_name')
+        street_number = request.POST.get('street_number')
+        city = request.POST.get('city')
+        postal_code = request.POST.get('postal_code')
+        country = request.POST.get('country')
+        payment_method = request.POST.get('payment_method')
+
+        try:
+            # First, create an Address instance
+            address = Address.objects.create(
+                street=street,
+                street_number=street_number,
+                city=city,
+                postal_code=postal_code,
+                country=country
+            )
+
+            # Then create an Order instance
+            order = Order.objects.create(
+                user=request.user,
+                address=address,
+                payment_method=payment_method,
+                name=name,
+                surname=surname,
+                email=email,
+                phone_number=phone_number,
+                paid=False,
+                status=Order.PROCESSING
+            )
+
+            # Process cart items from session
+            cart = request.session.get('cart', {})
+            for product_id, quantity in cart.items():
+                product = Product.objects.get(id=product_id)
+                OrderProduct.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=quantity
+                )
+
+            # Clear the cart from session after processing
+            request.session['cart'] = {}
+
+            messages.success(request, "Your order has been placed successfully!")
+            return redirect(reverse('order-success', kwargs={'order_id': order.id}))
+
+        except Exception as e:
+            messages.error(request, f"There was an error processing your order: {str(e)}")
+            return redirect('checkout')
+
+
+class OrderConfirmationView(View):
+    def get(self, request, order_id):
+        # Retrieve the order using the order_id
+        order = get_object_or_404(Order, id=order_id)
+        # Add any additional context you want to pass to the template
+        context = {
+            'order': order,
+        }
+        return render(request, 'shop/order-success.html', context)
