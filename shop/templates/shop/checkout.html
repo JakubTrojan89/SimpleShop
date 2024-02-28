@@ -6,25 +6,45 @@
 
     <p>Please fill in your address and choose a payment method:</p>
 
-    <form action="{% url 'shop:order_success' %}" method="post">
+    <button id="showAddressForm" class="btn btn-primary">Add Address</button>
+
+    <form id="addressForm" action="#" method="post" style="display: none;">
         {% csrf_token %}
         <!-- Address input fields -->
-        <label for="address">Address:</label>
-        <input type="text" id="address" name="address" value="{{ user_address.address }}" required><br><br>
+        <div id="addressFields" style="display: none;">
+            <label for="street">Street:</label>
+            <input type="text" id="street" name="street" required><br><br>
+
+            <label for="streetNumber">Street Number:</label>
+            <input type="text" id="streetNumber" name="streetNumber" required><br><br>
+
+            <label for="city">City:</label>
+            <input type="text" id="city" name="city" required><br><br>
+
+            <label for="postalCode">Postal Code:</label>
+            <input type="text" id="postalCode" name="postalCode" required><br><br>
+
+            <label for="country">Country:</label>
+            <input type="text" id="country" name="country" required><br><br>
+        </div>
 
         <!-- Payment method selection -->
-        <label for="payment-method">Payment Method:</label>
-        <select id="payment-method" name="payment-method">
+        <label for="paymentMethod">Payment Method:</label>
+        <select id="paymentMethod" name="paymentMethod">
             <option value="credit-card">Credit Card</option>
             <option value="paypal">PayPal</option>
             <option value="bank-transfer">Bank Transfer</option>
         </select><br><br>
 
-        <form action="{% url 'shop:order-success' order_id %}" method="get">
-            <button type="submit"
-                    class="inline-block mt-6 px-6 py-3 text-lg font-semibold bg-teal-500 text-white rounded-xl">Proceed
-                to Payment
-            </button>
-        </form>
+         <a href="{% url 'shop:order_success_no_id' %}" class="px-6 py-3 text-lg font-semibold bg-gray-500 text-white rounded-xl hover:bg-gray-700">Proceed to Payment</a>
     </form>
+    </form>
+
+    <script>
+        document.getElementById('showAddressForm').addEventListener('click', function () {
+            document.getElementById('addressFields').style.display = 'block';
+            document.getElementById('addressForm').style.display = 'block';
+        });
+    </script>
 {% endblock %}
+

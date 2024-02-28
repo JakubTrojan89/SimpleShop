@@ -50,7 +50,7 @@ def detail(request, pk):
     product = get_object_or_404(Product, pk=pk)
     related_products = Product.objects.filter(category=product.category, is_sold=False).exclude(pk=pk)[0:3]
 
-    return render(request, 'product/detail.html',{
+    return render(request, 'product/detail.html' ,{
         'product': product,
         'related_products': related_products,
     })
@@ -70,7 +70,7 @@ def add(request):
     else:
         form = AddProductForm()
 
-    return render(request, 'product/add.html',{
+    return render(request, 'product/add.html' ,{
         'form': form,
         'title': 'Add Product',
     })
@@ -248,6 +248,11 @@ class CheckoutView(View):
         except Exception as e:
             messages.error(request, f"There was an error processing your order: {str(e)}")
             return redirect('checkout')
+
+
+class OrderConfirmationView2(View):
+    def get(self, request):
+        return render(request, 'shop/order-success.html')
 
 
 class OrderConfirmationView(View):

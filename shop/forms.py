@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Product
+from .models import Product, Address
 
 INPUT_CLASSES = 'w-full py-4 px-6 rounded-xl border'
 
@@ -52,3 +52,8 @@ class EditProductForm(forms.ModelForm):
             })
         }
 
+
+class AddressForm(forms.ModelForm):
+    class Meta:
+        model = Address
+        fields = ('street', 'street_number', 'postal_code', 'city', 'country')

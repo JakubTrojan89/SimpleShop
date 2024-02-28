@@ -17,18 +17,18 @@
             <tbody>
             {% for product_id, quantity in request.session.cart.items %}
                 <tr>
-                    <td>{{ product.name }}</td>
-                    <td>${{ product.price }}</td>
-                    <td>{{ quantity }}</td>
-                    <td>
-                        <form action="#" method="post">
-                            {% csrf_token %}
-                            <button type="submit"
-                                    class="inline-block mt-6 px-6 py-3 text-lg font-semibold bg-red-500 text-white rounded-xl">
-                                Remove
-                            </button>
-                        </form>
-                </tr>
+                <td>{{ product.name }}</td>
+                <td>${{ product.price }}</td>
+                <td>{{ quantity }}</td>
+                <td>
+                    <form action="{% url 'shop:remove_cart' product_id %}/" method="post">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="inline-block mt-3 px-3 py-3 text-lg font-semibold bg-red-500 text-white rounded-xl">
+                            Remove
+                        </button>
+                    </form>
+                </td>
             {% endfor %}
             </tbody>
             <tfoot>
@@ -39,16 +39,16 @@
             </tfoot>
         </table>
         {% if request.user.is_authenticated %}
-        <form action="{% url 'shop:checkout' %}" method="get">
+            <form action="{% url 'shop:checkout' %}" method="get">
             <button type="submit"
                     class="inline-block mt-6 px-6 py-3 text-lg font-semibold bg-teal-500 text-white rounded-xl">Go to
                 Checkout
             </button>
-            {% else %}
+        {% else %}
 
             <a href="{% url 'login_view' %}"
                class="px-6 py-3 text-lg font-semibold bg-gray-500 text-white rounded-xl hover:bg-gray-700">Log in</a>
-            {% endif %}
+        {% endif %}
         </form>
     </div>
 {% endblock %}
